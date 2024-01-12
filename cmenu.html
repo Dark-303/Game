@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Character Menu</title>
+    <style>
+        .character-container {
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .character-info {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Character Menu</h1>
+
+    <!-- Character Info Display -->
+    <div id="characterInfo"></div>
+
+    <!-- Buttons for Upgrading Characters -->
+    <button onclick="upgradeCharacter('Character1')">Upgrade Character 1</button>
+    <button onclick="upgradeCharacter('Character2')">Upgrade Character 2</button>
+    <!-- Add more character buttons as needed -->
+
+    <!-- Back to Game Button -->
+    <button onclick="backToGame()">Back to Game</button>
+
+    <script>
+        // Example data structure for characters
+        let characters = {
+            Character1: { name: 'Character 1', level: 1, experience: 0 },
+            Character2: { name: 'Character 2', level: 1, experience: 0 }
+            // ... other characters
+        };
+
+        function displayCharacterInfo() {
+            const characterInfoDiv = document.getElementById('characterInfo');
+            characterInfoDiv.innerHTML = ''; // Clear existing info
+
+            for (const key in characters) {
+                const character = characters[key];
+                const div = document.createElement('div');
+                div.className = 'character-container';
+                div.innerHTML = `
+                    <div class="character-info">Name: ${character.name}</div>
+                    <div class="character-info">Level: ${character.level}</div>
+                    <div class="character-info">Experience: ${character.experience}</div>
+                `;
+                characterInfoDiv.appendChild(div);
+            }
+        }
+
+        function upgradeCharacter(characterName) {
+            if (characters[characterName]) {
+                characters[characterName].level++;
+                alert(characterName + ' upgraded to level ' + characters[characterName].level);
+                displayCharacterInfo(); // Update displayed info
+            }
+        }
+
+        function backToGame() {
+            window.location.href = 'main.html'; // Replace with your main game page
+        }
+
+        // Initial display of character info
+        displayCharacterInfo();
+    </script>
+</body>
+</html>
