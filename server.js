@@ -38,23 +38,50 @@ function generateUniqueId() {
     return Math.random().toString(36).substring(2, 15);
 }
 
+// ... [rest of the imports and setup]
+
+let gameState = {
+    players: {},
+    // Add other game-specific state information here
+};
+
+function updatePlayerState(playerId, newPosition) {
+    if (gameState.players[playerId]) {
+        gameState.players[playerId].position = newPosition;
+        // Update other player-specific state information
+        broadcastGameState(); // Broadcast updated game state
+    }
+}
+
+function broadcastGameState() {
+    const state = JSON.stringify(gameState);
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(state);
+        }
+    });
+}
+
 wss.on('connection', ws => {
     const id = generateUniqueId();
     players[id] = new Player(id);
+    gameState.players[id] = { position: { x: 0, y: 0 } }; // Initialize player state
     console.log('Player connected with id:', id);
 
     ws.on('message', message => {
         console.log('received: %s', message);
-        // Handle actions here
+        updatePlayerState()
+        // Parse and handle actions here
+        // For example, update player position
+        // updatePlayerState(id, newPosition);
     });
 
     ws.on('close', () => {
         delete players[id];
+        delete gameState.players[id]; // Remove player from game state
+        broadcastGameState(); // Broadcast updated game state
         console.log('Player disconnected with id:', id);
     });
-
-    // Define gameState and broadcastGameState function
-    // ...
 });
 
 // Listen on the port provided by the environment (e.g., Glitch)
