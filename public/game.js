@@ -4,7 +4,7 @@ let ctx = canvas.getContext('2d');
 let playerPosition = { x: 100, y: 100 };
 let isAttacking = false;
 
-const serverAddress = 'ws://localhost:15430'; // Change as per your server address
+const serverAddress = 'ws://localhost:3000'; // Change as per your server address
 const socket = new WebSocket(serverAddress);
 
 socket.onopen = function() {
