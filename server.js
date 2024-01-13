@@ -4,88 +4,73 @@ const WebSocket = require('ws');
 const path = require('path');
 
 const app = express();
-
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
+const server = http.createServer(app);
 
 // Serve main.html at the root URL
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/main.html'));
+    res.sendFile(path.join(__dirname, 'public/main.html'));
 });
-
-// Create an HTTP server and pass the Express app as the handler
-const server = http.createServer(app);
 
 // Attach WebSocket server to the HTTP server
 const wss = new WebSocket.Server({ server });
 
-class Player {
-    constructor(id) {
-        this.id = id;
-        this.position = { x: 0, y: 0 };
-        // Add other player properties
-    }
-
-    update(position) {
-        this.position = position;
-        // Update other properties
-    }
-}
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/main.html'));
+  });  
 
 const players = {};
 
-function generateUniqueId() {
-    return Math.random().toString(36).substring(2, 15);
-}
+wss.on('connection', (ws) => {
+    const playerId = generateUniqueId();
+    players[playerId] = { x: 0, y: 0, color: 'red' }; // Initial player state
 
-// ... [rest of the imports and setup]
+    ws.on('message', (message) => {
+        const data = JSON.parse(message);
+        handlePlayerAction(playerId, data);
+    });
 
-let gameState = {
-    players: {},
-    // Add other game-specific state information here
-};
+    ws.on('close', () => {
+        delete players[playerId]; // Remove player on disconnect
+        broadcastGameState();
+    });
+});
 
-function updatePlayerState(playerId, newPosition) {
-    if (gameState.players[playerId]) {
-        gameState.players[playerId].position = newPosition;
-        // Update other player-specific state information
-        broadcastGameState(); // Broadcast updated game state
+function handlePlayerAction(playerId, data) {
+    const player = players[playerId];
+    if (!player) return;
+
+    switch (data.action) {
+        case 'move':
+            // Update player position based on key press (WASD)
+            const speed = 5; // Adjust speed as needed
+            if (data.key === 'w') player.y -= speed;
+            if (data.key === 's') player.y += speed;
+            if (data.key === 'a') player.x -= speed;
+            if (data.key === 'd') player.x += speed;
+            break;
+        case 'attack':
+            // Handle attack action
+            player.color = 'lighterColor'; // Example: Change color on attack
+            setTimeout(() => player.color = 'normalColor', 200); // Revert after delay
+            break;
+        // Handle other actions like artifacts
     }
+    broadcastGameState();
 }
+
 
 function broadcastGameState() {
-    const state = JSON.stringify(gameState);
-    wss.clients.forEach(client => {
+    wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
-            client.send(state);
+            client.send(JSON.stringify(players));
         }
     });
 }
 
-wss.on('connection', ws => {
-    const id = generateUniqueId();
-    players[id] = new Player(id);
-    gameState.players[id] = { position: { x: 0, y: 0 } }; // Initialize player state
-    console.log('Player connected with id:', id);
+function generateUniqueId() {
+    return Math.random().toString(36).substring(2, 9);
+}
 
-    ws.on('message', message => {
-        console.log('received: %s', message);
-        updatePlayerState()
-        // Parse and handle actions here
-        // For example, update player position
-        // updatePlayerState(id, newPosition);
-    });
-
-    ws.on('close', () => {
-        delete players[id];
-        delete gameState.players[id]; // Remove player from game state
-        broadcastGameState(); // Broadcast updated game state
-        console.log('Player disconnected with id:', id);
-    });
-});
-
-// Listen on the port provided by the environment (e.g., Glitch)
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+server.listen(3000, () => {
+    console.log('Server started on port 3000');
 });
